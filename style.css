@@ -1,0 +1,248 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+}
+
+.header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    font-weight: 300;
+}
+
+.game-wrapper {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 30px;
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 968px) {
+    .game-wrapper {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Info Panel */
+.info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.status-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.current-turn, .timer-section {
+    margin-bottom: 15px;
+}
+
+.current-turn:last-child, .timer-section:last-child {
+    margin-bottom: 0;
+}
+
+.turn-label, .timer-label {
+    display: block;
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.turn-value, .timer-value {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #212529;
+}
+
+.timer-value.warning {
+    color: #ff6b6b;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Difficulty Section */
+.difficulty-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    color: #495057;
+}
+
+.difficulty-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.difficulty-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #dee2e6;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.difficulty-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.difficulty-btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.difficulty-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Actions */
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.btn-secondary:hover {
+    background: #dee2e6;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Game Status */
+.game-status {
+    background: #e7f5ff;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 4px solid #339af0;
+}
+
+.game-status p {
+    color: #1864ab;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.game-status.victory {
+    background: #d3f9d8;
+    border-left-color: #37b24d;
+}
+
+.game-status.victory p {
+    color: #2b8a3e;
+}
+
+.game-status.defeat {
+    background: #ffe3e3;
+    border-left-color: #f03e3e;
+}
+
+.game-status.defeat p {
+    color: #c92a2a;
+}
+
+/* Board Container */
+.board-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+#gameBoard {
+    background: #daa520;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    max-width: 100%;
+    height: auto;
+}
+
+#gameBoard.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: white;
+    margin-top: 20px;
+    opacity: 0.9;
+    font-size: 0.9rem;
+}

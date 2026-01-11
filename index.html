@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding - AI 오목</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎯 AI 오목</h1>
+            <p class="subtitle">Vibe Coding</p>
+        </header>
+
+        <div class="game-wrapper">
+            <!-- Game Info Panel -->
+            <div class="info-panel">
+                <div class="status-section">
+                    <div class="current-turn">
+                        <span class="turn-label">현재 차례:</span>
+                        <span id="turnIndicator" class="turn-value">흑 (당신)</span>
+                    </div>
+                    <div class="timer-section">
+                        <span class="timer-label">첫 수 제한:</span>
+                        <span id="timer" class="timer-value">60초</span>
+                    </div>
+                </div>
+
+                <div class="difficulty-section" id="difficultySection">
+                    <h3>AI 난이도 선택</h3>
+                    <div class="difficulty-buttons">
+                        <button class="difficulty-btn" data-difficulty="easy">쉬움</button>
+                        <button class="difficulty-btn active" data-difficulty="medium">보통</button>
+                        <button class="difficulty-btn" data-difficulty="hard">어려움</button>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="startBtn" class="btn btn-primary">게임 시작</button>
+                    <button id="resetBtn" class="btn btn-secondary">다시 시작</button>
+                </div>
+
+                <div class="game-status" id="gameStatus">
+                    <p>난이도를 선택하고 게임을 시작하세요!</p>
+                </div>
+            </div>
+
+            <!-- Game Board -->
+            <div class="board-container">
+                <canvas id="gameBoard" width="600" height="600"></canvas>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>첫 수는 1분 이내에 두어야 합니다 | 5개를 연속으로 놓으면 승리!</p>
+        </footer>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
