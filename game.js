@@ -234,43 +234,37 @@ class OmokGame {
     }
 
     findBestMove() {
-        const depth = this.difficulty === 'easy' ? 1 : this.difficulty === 'medium' ? 2 : 3;
+        // 1. 즉시 승리할 수 있는 수 찾기 (5목 완성)
+        const winMove = this.findWinningMove(2);
+        if (winMove) return winMove;
 
-        // 승리 가능한 수 찾기
-        for (let row = 0; row < BOARD_SIZE; row++) {
-            for (let col = 0; col < BOARD_SIZE; col++) {
-                if (this.board[row][col] === 0) {
-                    this.board[row][col] = 2;
-                    if (this.checkWin(row, col, 2)) {
-                        this.board[row][col] = 0;
-                        return { row, col };
-                    }
-                    this.board[row][col] = 0;
-                }
-            }
-        }
+        // 2. 상대의 즉시 승리를 막기
+        const blockMove = this.findWinningMove(1);
+        if (blockMove) return blockMove;
 
-        // 사용자의 승리 막기
-        for (let row = 0; row < BOARD_SIZE; row++) {
-            for (let col = 0; col < BOARD_SIZE; col++) {
-                if (this.board[row][col] === 0) {
-                    this.board[row][col] = 1;
-                    if (this.checkWin(row, col, 1)) {
-                        this.board[row][col] = 0;
-                        return { row, col };
-                    }
-                    this.board[row][col] = 0;
-                }
-            }
-        }
+        // 3. 4-3 같은 필승 패턴 찾기 (AI)
+        const criticalAttack = this.findCriticalMove(2);
+        if (criticalAttack) return criticalAttack;
 
-        // 평가 함수를 사용한 최선의 수 찾기
+        // 4. 상대의 4-3 패턴 막기
+        const criticalDefense = this.findCriticalMove(1);
+        if (criticalDefense) return criticalDefense;
+
+        // 5. 쌍삼(double three) 만들기
+        const doubleThree = this.findDoubleThree(2);
+        if (doubleThree) return doubleThree;
+
+        // 6. 상대의 쌍삼 막기
+        const blockDoubleThree = this.findDoubleThree(1);
+        if (blockDoubleThree) return blockDoubleThree;
+
+        // 7. 평가 함수를 사용한 최선의 수 찾기
         let bestScore = -Infinity;
         let bestMove = null;
 
         const moves = this.getAvailableMoves();
         for (const move of moves) {
-            const score = this.evaluatePosition(move.row, move.col, 2);
+            const score = this.evaluateMove(move.row, move.col);
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = move;
@@ -278,6 +272,198 @@ class OmokGame {
         }
 
         return bestMove || this.getRandomMove();
+    }
+
+    // 승리 가능한 수 찾기
+    findWinningMove(player) {
+        for (let row = 0; row < BOARD_SIZE; row++) {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                if (this.board[row][col] === 0) {
+                    this.board[row][col] = player;
+                    if (this.checkWin(row, col, player)) {
+                        this.board[row][col] = 0;
+                        return { row, col };
+                    }
+                    this.board[row][col] = 0;
+                }
+            }
+        }
+        return null;
+    }
+
+    // 치명적인 공격/방어 수 찾기 (열린 4, 4-3 등)
+    findCriticalMove(player) {
+        const criticalMoves = [];
+
+        for (let row = 0; row < BOARD_SIZE; row++) {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                if (this.board[row][col] === 0) {
+                    this.board[row][col] = player;
+
+                    const patterns = this.analyzePatterns(row, col, player);
+                    let score = 0;
+
+                    // 열린 4 (양쪽이 열려있는 4개 연속)
+                    if (patterns.openFour > 0) score += 50000;
+                    // 막힌 4 (한쪽이 막힌 4개 연속)
+                    if (patterns.closedFour > 0) score += 10000;
+                    // 열린 3
+                    if (patterns.openThree >= 2) score += 5000; // 쌍삼
+                    if (patterns.openThree === 1) score += 1000;
+
+                    this.board[row][col] = 0;
+
+                    if (score > 0) {
+                        criticalMoves.push({ row, col, score });
+                    }
+                }
+            }
+        }
+
+        if (criticalMoves.length > 0) {
+            criticalMoves.sort((a, b) => b.score - a.score);
+            return { row: criticalMoves[0].row, col: criticalMoves[0].col };
+        }
+
+        return null;
+    }
+
+    // 쌍삼(double three) 찾기
+    findDoubleThree(player) {
+        for (let row = 0; row < BOARD_SIZE; row++) {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                if (this.board[row][col] === 0) {
+                    this.board[row][col] = player;
+                    const patterns = this.analyzePatterns(row, col, player);
+                    this.board[row][col] = 0;
+
+                    if (patterns.openThree >= 2) {
+                        return { row, col };
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    // 패턴 분석
+    analyzePatterns(row, col, player) {
+        const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+        let openFour = 0;
+        let closedFour = 0;
+        let openThree = 0;
+        let closedThree = 0;
+
+        for (const [dr, dc] of directions) {
+            const line = this.getLine(row, col, dr, dc, player);
+            const pattern = this.classifyPattern(line, player);
+
+            if (pattern.type === 'openFour') openFour++;
+            else if (pattern.type === 'closedFour') closedFour++;
+            else if (pattern.type === 'openThree') openThree++;
+            else if (pattern.type === 'closedThree') closedThree++;
+        }
+
+        return { openFour, closedFour, openThree, closedThree };
+    }
+
+    // 한 방향의 라인 정보 가져오기
+    getLine(row, col, dr, dc, player) {
+        const line = [];
+
+        // 역방향으로 최대 5칸
+        for (let i = 5; i >= 1; i--) {
+            const r = row - dr * i;
+            const c = col - dc * i;
+            if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
+                line.push(this.board[r][c]);
+            } else {
+                line.push(-1); // 보드 밖
+            }
+        }
+
+        // 현재 위치
+        line.push(player);
+
+        // 정방향으로 최대 5칸
+        for (let i = 1; i <= 5; i++) {
+            const r = row + dr * i;
+            const c = col + dc * i;
+            if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
+                line.push(this.board[r][c]);
+            } else {
+                line.push(-1); // 보드 밖
+            }
+        }
+
+        return line;
+    }
+
+    // 패턴 분류
+    classifyPattern(line, player) {
+        const opponent = player === 1 ? 2 : 1;
+        let count = 0;
+        let openEnds = 0;
+        let start = -1, end = -1;
+
+        // 연속된 돌의 개수와 범위 찾기
+        for (let i = 0; i < line.length; i++) {
+            if (line[i] === player) {
+                if (start === -1) start = i;
+                end = i;
+                count++;
+            }
+        }
+
+        // 양쪽 끝이 열려있는지 확인
+        if (start > 0 && line[start - 1] === 0) openEnds++;
+        if (end < line.length - 1 && line[end + 1] === 0) openEnds++;
+
+        // 패턴 분류
+        if (count === 4) {
+            if (openEnds === 2) return { type: 'openFour', count, openEnds };
+            if (openEnds >= 1) return { type: 'closedFour', count, openEnds };
+        }
+        if (count === 3) {
+            if (openEnds === 2) return { type: 'openThree', count, openEnds };
+            if (openEnds === 1) return { type: 'closedThree', count, openEnds };
+        }
+        if (count === 2 && openEnds === 2) return { type: 'openTwo', count, openEnds };
+
+        return { type: 'none', count, openEnds };
+    }
+
+    // 수를 평가하는 함수 (개선된 버전)
+    evaluateMove(row, col) {
+        let aiScore = 0;
+        let playerScore = 0;
+
+        // AI 입장에서의 점수
+        this.board[row][col] = 2;
+        const aiPatterns = this.analyzePatterns(row, col, 2);
+        aiScore += aiPatterns.openFour * 10000;
+        aiScore += aiPatterns.closedFour * 1000;
+        aiScore += aiPatterns.openThree * 500;
+        aiScore += aiPatterns.closedThree * 100;
+        this.board[row][col] = 0;
+
+        // 상대 입장에서의 점수 (방어 점수)
+        this.board[row][col] = 1;
+        const playerPatterns = this.analyzePatterns(row, col, 1);
+        playerScore += playerPatterns.openFour * 9000;
+        playerScore += playerPatterns.closedFour * 900;
+        playerScore += playerPatterns.openThree * 450;
+        playerScore += playerPatterns.closedThree * 90;
+        this.board[row][col] = 0;
+
+        // 중앙 가산점
+        const centerBonus = (14 - Math.abs(row - 7) - Math.abs(col - 7)) * 5;
+
+        // 난이도에 따른 가중치
+        const difficultyMultiplier = this.difficulty === 'easy' ? 0.5 :
+                                     this.difficulty === 'medium' ? 1.0 : 1.5;
+
+        return (aiScore * 1.2 + playerScore) * difficultyMultiplier + centerBonus;
     }
 
     getAvailableMoves() {
@@ -320,70 +506,6 @@ class OmokGame {
     getRandomMove() {
         const moves = this.getAvailableMoves();
         return moves.length > 0 ? moves[Math.floor(Math.random() * moves.length)] : null;
-    }
-
-    evaluatePosition(row, col, player) {
-        let score = 0;
-        const directions = [
-            [0, 1], [1, 0], [1, 1], [1, -1]
-        ];
-
-        for (const [dr, dc] of directions) {
-            const count = this.countStones(row, col, dr, dc, player);
-            score += this.scorePattern(count);
-        }
-
-        // 중앙에 가까울수록 가산점
-        const centerDistance = Math.abs(row - 7) + Math.abs(col - 7);
-        score += (14 - centerDistance) * 2;
-
-        return score;
-    }
-
-    countStones(row, col, dr, dc, player) {
-        let count = 0;
-        let openEnds = 0;
-
-        // 정방향
-        for (let i = 1; i < 5; i++) {
-            const r = row + dr * i;
-            const c = col + dc * i;
-            if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) break;
-            if (this.board[r][c] === player) count++;
-            else if (this.board[r][c] === 0) {
-                openEnds++;
-                break;
-            }
-            else break;
-        }
-
-        // 역방향
-        for (let i = 1; i < 5; i++) {
-            const r = row - dr * i;
-            const c = col - dc * i;
-            if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) break;
-            if (this.board[r][c] === player) count++;
-            else if (this.board[r][c] === 0) {
-                openEnds++;
-                break;
-            }
-            else break;
-        }
-
-        return { count, openEnds };
-    }
-
-    scorePattern(pattern) {
-        const { count, openEnds } = pattern;
-
-        if (count >= 4) return 100000;
-        if (count === 3 && openEnds === 2) return 10000;
-        if (count === 3 && openEnds === 1) return 1000;
-        if (count === 2 && openEnds === 2) return 500;
-        if (count === 2 && openEnds === 1) return 100;
-        if (count === 1 && openEnds === 2) return 10;
-
-        return 1;
     }
 
     checkWin(row, col, player) {
