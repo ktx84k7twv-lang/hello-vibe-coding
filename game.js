@@ -17,6 +17,7 @@ class OmokGame {
         this.firstMoveMade = false;
         this.timer = null;
         this.timeLeft = FIRST_MOVE_TIME_LIMIT;
+        this.hoverPos = null; // 마우스 호버 위치
 
         this.initCanvas();
         this.initEventListeners();
@@ -61,6 +62,29 @@ class OmokGame {
                 this.handleClick(x, y);
             }
         });
+
+        // 마우스 이동 - 호버 미리보기
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (this.gameStarted && !this.gameOver && this.currentPlayer === 1) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const pos = this.getBoardPosition(x, y);
+                if (pos && this.board[pos.row][pos.col] === 0) {
+                    this.hoverPos = pos;
+                } else {
+                    this.hoverPos = null;
+                }
+                this.drawBoard();
+            }
+        });
+
+        // 마우스가 캔버스를 벗어났을 때
+        this.canvas.addEventListener('mouseleave', () => {
+            this.hoverPos = null;
+            this.drawBoard();
+        });
     }
 
     startGame() {
@@ -88,6 +112,7 @@ class OmokGame {
         this.currentPlayer = 1;
         this.timeLeft = FIRST_MOVE_TIME_LIMIT;
         this.board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(0));
+        this.hoverPos = null;
 
         document.getElementById('startBtn').disabled = false;
         document.querySelectorAll('.difficulty-btn').forEach(btn => btn.disabled = false);
@@ -148,25 +173,33 @@ class OmokGame {
         this.canvas.classList.add('disabled');
     }
 
-    handleClick(x, y) {
-        const col = Math.round((x - CELL_SIZE / 2) / CELL_SIZE);
-        const row = Math.round((y - CELL_SIZE / 2) / CELL_SIZE);
+    getBoardPosition(x, y) {
+        // 캔버스 좌표를 보드 좌표로 변환
+        const col = Math.round((x - CELL_SIZE) / CELL_SIZE);
+        const row = Math.round((y - CELL_SIZE) / CELL_SIZE);
 
         if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
-            if (this.board[row][col] === 0) {
-                this.makeMove(row, col, 1);
+            return { row, col };
+        }
+        return null;
+    }
 
-                if (!this.firstMoveMade) {
-                    this.firstMoveMade = true;
-                    this.stopTimer();
-                    this.updateTimer();
-                }
+    handleClick(x, y) {
+        const pos = this.getBoardPosition(x, y);
 
-                if (!this.gameOver) {
-                    setTimeout(() => {
-                        this.aiMove();
-                    }, 300);
-                }
+        if (pos && this.board[pos.row][pos.col] === 0) {
+            this.makeMove(pos.row, pos.col, 1);
+
+            if (!this.firstMoveMade) {
+                this.firstMoveMade = true;
+                this.stopTimer();
+                this.updateTimer();
+            }
+
+            if (!this.gameOver) {
+                setTimeout(() => {
+                    this.aiMove();
+                }, 300);
             }
         }
     }
@@ -467,6 +500,24 @@ class OmokGame {
                     this.ctx.shadowOffsetY = 0;
                 }
             }
+        }
+
+        // 호버 미리보기 그리기
+        if (this.hoverPos && this.currentPlayer === 1) {
+            const x = CELL_SIZE * (this.hoverPos.col + 1);
+            const y = CELL_SIZE * (this.hoverPos.row + 1);
+
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, STONE_RADIUS, 0, Math.PI * 2);
+
+            // 반투명 흑돌
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.fill();
+
+            // 테두리 추가
+            this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
         }
     }
 
